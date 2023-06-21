@@ -17,9 +17,9 @@ func OpenMysql(
 	schemaPath string,
 ) *sql.DB {
 
-	dsnWithMultistatement := *dsn + "?multiStatements=true"
+	dsnWithOpts := *dsn + "?multiStatements=true&parseTime=true"
 
-	pool, err := sql.Open("mysql", dsnWithMultistatement)
+	pool, err := sql.Open("mysql", dsnWithOpts)
 	require.NoError(t, err)
 
 	dbName := "golang_test"

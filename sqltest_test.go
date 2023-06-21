@@ -2,6 +2,7 @@ package sqltest_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,10 +23,10 @@ func TestOpenMysql_SingleTableSchema(t *testing.T) {
 	t.Run("Insert some records and retrieve", func(t *testing.T) {
 		db := sqltest.OpenMysql(t, schemaPath)
 
-		_, err := db.Exec("insert into mytable values (1, 'hello')")
+		_, err := db.Exec("insert into mytable values (1, 'hello', now())")
 		require.NoError(t, err)
 
-		_, err = db.Exec("insert into mytable values (2, 'world')")
+		_, err = db.Exec("insert into mytable values (2, 'world', now())")
 		require.NoError(t, err)
 
 		var count int
@@ -63,4 +64,50 @@ func TestOpenMysql_MultiTableSchema(t *testing.T) {
 		err := db.Ping()
 		require.NoError(t, err)
 	})
+}
+
+func TestOpenMysql_TimeVariantsSchema(t *testing.T) {
+
+	schemaPath := "testdata/time_variants.sql"
+
+	t.Run("Insert record with datetime and retrieve", func(t *testing.T) {
+		db := sqltest.OpenMysql(t, schemaPath)
+
+		someTime := time.Now()
+
+		_, err := db.Exec(
+			"insert into time_variants set type_datetime=?",
+			someTime,
+		)
+		require.NoError(t, err)
+
+		var timeVal time.Time
+		err = db.QueryRow(
+			"select type_datetime from time_variants where id=1",
+		).Scan(&timeVal)
+		require.NoError(t, err)
+
+		assert.True(t, someTime.Sub(timeVal) < time.Second)
+	})
+
+	t.Run("Insert record with timestamp and retrieve", func(t *testing.T) {
+		db := sqltest.OpenMysql(t, schemaPath)
+
+		someTime := time.Now()
+
+		_, err := db.Exec(
+			"insert into time_variants set type_timestamp=?",
+			someTime,
+		)
+		require.NoError(t, err)
+
+		var timeVal time.Time
+		err = db.QueryRow(
+			"select type_timestamp from time_variants where id=1",
+		).Scan(&timeVal)
+		require.NoError(t, err)
+
+		assert.True(t, someTime.Sub(timeVal) < time.Second)
+	})
+
 }
