@@ -3,7 +3,10 @@ package sqltest
 import (
 	"database/sql"
 	"flag"
+	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -22,7 +25,10 @@ func OpenMysql(
 	pool, err := sql.Open("mysql", dsnWithOpts)
 	require.NoError(t, err)
 
-	dbName := "golang_test"
+	// A unique DB name is used for every db connection to avoid
+	// concurrency issues between tests (i.e. one test dropping
+	// a db which is in use by another test)
+	dbName := generateDBName()
 
 	t.Cleanup(func() {
 
@@ -50,5 +56,10 @@ func OpenMysql(
 	require.NoError(t, err, "error executing schema file")
 
 	return pool
+}
+
+func generateDBName() string {
+	rand := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return fmt.Sprintf("golang_test_%x", rand.Uint64())
 }
 
